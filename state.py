@@ -31,7 +31,7 @@ class CriterionScore(BaseModel):
 
 class EvaluationResult(BaseModel):
     """Pydantic model for the output of the PromptEvaluator tool."""
-    scores: List = Field(description="A list of scores for each criterion.")
+    scores: List[CriterionScore] = Field(description="A list of scores for each criterion.")
     qualitative_feedback: str = Field(description="A summary of the prompt's main strengths and weaknesses.")
 
 

@@ -37,7 +37,7 @@ if __name__ == "__main__":
     final_state = None
     for s in app.stream(initial_state):
         # The key is the name of the node that just ran
-        node_name = list(s.keys())
+        node_name = list(s.keys())[0]  # Extract the single key as string
         print(f"\n--- State after node '{node_name}' ---")
         # You can print the full state here for detailed debugging if needed
         # print(s[node_name])

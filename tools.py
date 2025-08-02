@@ -15,22 +15,16 @@ class P3RO_Agent_Tools:
         self.model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=1.0)
         print(f"--- Tools initialized with model: {llm_model_name} ---")
 
-    def _invoke_llm_for_json(self, prompt: str, pydantic_class: BaseModel) -> Dict:
-        """A helper function to invoke the LLM and parse its JSON output."""
+    def _invoke_llm_for_json(self, prompt: str, pydantic_class: BaseModel):
+        """A helper function to invoke the LLM and parse its structured output."""
         try:
-            response = self.model.generate_content(prompt)
-            # Clean the response to extract the JSON part
-            json_str = response.text.strip().replace("```json", "").replace("```", "").strip()
-            parsed_json = json.loads(json_str)
-            # Validate with Pydantic
-            pydantic_class.model_validate(parsed_json)
-            return parsed_json
-        except (json.JSONDecodeError, ValueError) as e:
-            print(f"Error parsing LLM JSON output: {e}")
-            print(f"Raw response was: {response.text}")
-            # In a real application, you'd want more robust error handling,
-            # like retrying or calling a "fixer" LLM.
-            return {"error": str(e), "raw_response": response.text}
+            structured_llm = self.model.with_structured_output(pydantic_class)
+            response_obj = structured_llm.invoke(prompt)
+            return response_obj
+        except Exception as e:
+            print(f"Error calling LLM or parsing output for {pydantic_class.__name__}: {e}")
+            # Fallback or retry logic could be implemented here
+            return None
 
     def decompose_goal(self, state: AgentState) -> Dict:
         """Translates the user's goal into concrete criteria."""
@@ -71,8 +65,11 @@ class P3RO_Agent_Tools:
         "{goal}"
         """
         result = self._invoke_llm_for_json(prompt, DecomposedGoal)
-        print(f"Decomposed Criteria: {result['criteria']}")
-        return {"decomposed_criteria": result["criteria"]}
+        if not result:
+            raise ValueError("Failed to decompose goals.")
+        
+        print(f"Decomposed Criteria: {result.criteria}")
+        return {"decomposed_criteria": result.criteria}
 
     def formulate_strategy(self, state: AgentState) -> Dict:
         """Creates a high-level improvement plan."""
@@ -111,8 +108,11 @@ class P3RO_Agent_Tools:
         - History of Past Attempts: "{state['prompt_history']}"
         """
         result = self._invoke_llm_for_json(prompt, ImprovementPlan)
-        print(f"Formulated Plan:\n{result['plan']}")
-        return {"high_level_plan": result["plan"]}
+        if not result:
+            raise ValueError("Failed to formulate strategy.")
+        
+        print(f"Formulated Plan:\n{result.plan}")
+        return {"high_level_plan": result.plan}
 
     def generate_prompt(self, state: AgentState) -> Dict:
         """Generates a new, improved version of the prompt."""
@@ -147,12 +147,15 @@ class P3RO_Agent_Tools:
         **Perform your task now based on the provided context.**
         """
         result = self._invoke_llm_for_json(prompt, GeneratedPrompt)
-        print(f"Generator Reasoning: {result['reasoning']}")
-        print(f"Generated Prompt:\n---\n{result['prompt_text']}\n---")
+        if not result:
+            raise ValueError("Failed to generate prompt.")
+        
+        print(f"Generator Reasoning: {result.reasoning}")
+        print(f"Generated Prompt:\n---\n{result.prompt_text}\n---")
 
         # Update history with the new prompt and its reasoning
         history = state["prompt_history"]
-        history.append({"prompt_text": result["prompt_text"], "reasoning": result["reasoning"]})
+        history.append({"prompt_text": result.prompt_text, "reasoning": result.reasoning})
 
         return {"prompt_history": history}
 
@@ -185,15 +188,17 @@ class P3RO_Agent_Tools:
         **Perform your evaluation now.**
         """
         result = self._invoke_llm_for_json(prompt, EvaluationResult)
+        if not result:
+            raise ValueError("Failed to evaluate prompt.")
 
         # Update the last entry in history with its evaluation
         history = state["prompt_history"]
-        history[-1]["evaluation"] = result
+        history[-1]["evaluation"] = result.dict()
 
         print("Evaluation Results:")
-        for score in result["scores"]:
-            print(f"  - {score['criterion']}: {score['score']}/10 ({score['justification']})")
-        print(f"Qualitative Feedback: {result['qualitative_feedback']}")
+        for score in result.scores:
+            print(f"  - {score.criterion}: {score.score}/10 ({score.justification})")
+        print(f"Qualitative Feedback: {result.qualitative_feedback}")
 
         return {"prompt_history": history}
 
@@ -230,5 +235,8 @@ class P3RO_Agent_Tools:
         **Perform your synthesis now.**
         """
         result = self._invoke_llm_for_json(prompt, Reflection)
-        print(f"Synthesized Reflection: {result['summary']}")
-        return {"current_reflection": result["summary"]}
+        if not result:
+            raise ValueError("Failed to synthesize reflection.")
+        
+        print(f"Synthesized Reflection: {result.summary}")
+        return {"current_reflection": result.summary}
