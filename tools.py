@@ -12,7 +12,7 @@ class P3RO_Agent_Tools:
 
     def __init__(self, llm_model_name="gemini-2.5-pro"):
         """Initializes the toolset with a specific Gemini model."""
-        self.model = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=1.0)
+        self.model = ChatGoogleGenerativeAI(model=llm_model_name, temperature=1.0)
         print(f"--- Tools initialized with model: {llm_model_name} ---")
 
     def _invoke_llm_for_json(self, prompt: str, pydantic_class: BaseModel):

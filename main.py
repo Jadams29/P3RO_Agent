@@ -19,9 +19,9 @@ if __name__ == "__main__":
     initial_state = {
         "initial_prompt": initial_prompt_example,
         "goal": goal_example,
-        "decomposed_criteria": "",
+        "decomposed_criteria": [],
         "high_level_plan": "",
-        "prompt_history": "",
+        "prompt_history": [],
         "current_reflection": "This is the first iteration, so the goal is to establish a baseline improvement based on the initial plan.",
         "final_prompt": "",
         "iteration_count": 0,

@@ -11,7 +11,7 @@ class P3RO_Graph:
 
     def __init__(self):
         self.workflow = StateGraph(AgentState)
-        self.tools = P3RO_Agent_Tools()
+        self.tools = P3RO_Agent_Tools(llm_model_name="gemini-2.5-flash")
         self._build_graph()
 
     def _build_graph(self):
