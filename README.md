@@ -1,6 +1,6 @@
 ## The P³RO Architecture: A Framework for Iterative Prompt Refinement
 
-Building upon the comparative analysis, this section introduces a novel, hybrid agent architecture specifically designed for the task of iterative prompt refinement: the **P³RO (Plan, Probe, Polish, Reflect, and Orient)** architecture. P³RO is not a replacement for PDCA, OODA, or ReAct, but a sophisticated synthesis that orchestrates their strengths into a cohesive and powerful system. It provides a structured yet adaptive methodology for transforming a nascent user prompt into a highly effective, goal-aligned artifact.
+The **P³RO (Plan, Probe, Polish, Reflect, and Orient)** architecture. P³RO is not a replacement for PDCA, OODA, or ReAct, but a sophisticated synthesis that orchestrates their strengths into a cohesive and powerful system. It provides a structured yet adaptive methodology for transforming a nascent user prompt into a highly effective, goal-aligned artifact.
 
 ### 2.1 Naming and Core Concept
 
