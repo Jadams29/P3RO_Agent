@@ -33,15 +33,8 @@ if __name__ == "__main__":
 
     print("\n--- Starting Agent Execution ---")
 
-    # Stream the execution to see the agent's thought process
-    final_state = None
-    for s in app.stream(initial_state):
-        # The key is the name of the node that just ran
-        node_name = list(s.keys())[0]  # Extract the single key as string
-        print(f"\n--- State after node '{node_name}' ---")
-        # You can print the full state here for detailed debugging if needed
-        # print(s[node_name])
-        final_state = s[node_name]
+    # Run the agent and get the complete final state
+    final_state = app.invoke(initial_state)
 
     print("\n\n--- Agent Execution Finished ---")
 
