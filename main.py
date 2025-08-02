@@ -45,16 +45,48 @@ if __name__ == "__main__":
 
     print("\n\n--- Agent Execution Finished ---")
 
-    # Find the best prompt from the history
+    # Find the best prompt from the history with robust error handling
     best_prompt = ""
     best_score = -1
+    
+    print(f"\n--- Debugging Final State ---")
+    if final_state:
+        print(f"Final state keys: {list(final_state.keys())}")
+        if "prompt_history" in final_state:
+            print(f"Found {len(final_state['prompt_history'])} prompts in history")
+        else:
+            print("No 'prompt_history' key in final_state")
+    else:
+        print("final_state is None")
+    
     if final_state and final_state.get("prompt_history"):
-        for attempt in final_state["prompt_history"]:
-            if "evaluation" in attempt:
-                current_score = sum(s["score"] for s in attempt["evaluation"]["scores"])
-                if current_score > best_score:
-                    best_score = current_score
-                    best_prompt = attempt["prompt_text"]
+        for i, attempt in enumerate(final_state["prompt_history"]):
+            print(f"\nAttempt {i} keys: {list(attempt.keys())}")
+            if "evaluation" in attempt and attempt["evaluation"] and "scores" in attempt["evaluation"]:
+                try:
+                    scores = attempt["evaluation"]["scores"]
+                    print(f"  Found {len(scores)} evaluation scores")
+                    current_score = sum(s["score"] for s in scores if isinstance(s, dict) and "score" in s)
+                    print(f"  Total score: {current_score}")
+                    if current_score > best_score:
+                        best_score = current_score
+                        best_prompt = attempt["prompt_text"]
+                        print(f"  New best prompt found with score {current_score}")
+                except Exception as e:
+                    print(f"  Error calculating score for attempt {i}: {e}")
+            else:
+                print(f"  No evaluation data for attempt {i}")
+    
+    # Fallback: if no evaluated prompts, use the last generated one
+    if not best_prompt and final_state and final_state.get("prompt_history"):
+        print("\nNo evaluated prompts found, using last generated prompt as fallback")
+        last_attempt = final_state["prompt_history"][-1]
+        if "prompt_text" in last_attempt:
+            best_prompt = last_attempt["prompt_text"]
+            print("Using last generated prompt")
+    
+    if not best_prompt:
+        print("No prompts found in history")
 
     print("\n\n=====================================")
     print("          FINAL RESULTS")
