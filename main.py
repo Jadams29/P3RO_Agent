@@ -33,64 +33,76 @@ if __name__ == "__main__":
 
     print("\n--- Starting Agent Execution ---")
 
-    # Run the agent and get the complete final state
-    final_state = app.invoke(initial_state)
+    try:
+        # Run the agent and get the complete final state
+        final_state = app.invoke(initial_state)
 
-    print("\n\n--- Agent Execution Finished ---")
+        print("\n\n--- Agent Execution Finished ---")
 
-    # Find the best prompt from the history with robust error handling
-    best_prompt = ""
-    best_score = -1
+        # Find the best prompt from the history with robust error handling
+        best_prompt = ""
+        best_score = -1
     
-    print(f"\n--- Debugging Final State ---")
-    if final_state:
-        print(f"Final state keys: {list(final_state.keys())}")
-        if "prompt_history" in final_state:
-            print(f"Found {len(final_state['prompt_history'])} prompts in history")
-        else:
-            print("No 'prompt_history' key in final_state")
-    else:
-        print("final_state is None")
-    
-    if final_state and final_state.get("prompt_history"):
-        for i, attempt in enumerate(final_state["prompt_history"]):
-            print(f"\nAttempt {i} keys: {list(attempt.keys())}")
-            if "evaluation" in attempt and attempt["evaluation"] and "scores" in attempt["evaluation"]:
-                try:
-                    scores = attempt["evaluation"]["scores"]
-                    print(f"  Found {len(scores)} evaluation scores")
-                    current_score = sum(s["score"] for s in scores if isinstance(s, dict) and "score" in s)
-                    print(f"  Total score: {current_score}")
-                    if current_score > best_score:
-                        best_score = current_score
-                        best_prompt = attempt["prompt_text"]
-                        print(f"  New best prompt found with score {current_score}")
-                except Exception as e:
-                    print(f"  Error calculating score for attempt {i}: {e}")
+        print(f"\n--- Debugging Final State ---")
+        if final_state:
+            print(f"Final state keys: {list(final_state.keys())}")
+            if "prompt_history" in final_state:
+                print(f"Found {len(final_state['prompt_history'])} prompts in history")
             else:
-                print(f"  No evaluation data for attempt {i}")
+                print("No 'prompt_history' key in final_state")
+        else:
+            print("final_state is None")
     
-    # Fallback: if no evaluated prompts, use the last generated one
-    if not best_prompt and final_state and final_state.get("prompt_history"):
-        print("\nNo evaluated prompts found, using last generated prompt as fallback")
-        last_attempt = final_state["prompt_history"][-1]
-        if "prompt_text" in last_attempt:
-            best_prompt = last_attempt["prompt_text"]
-            print("Using last generated prompt")
+        if final_state and final_state.get("prompt_history"):
+            for i, attempt in enumerate(final_state["prompt_history"]):
+                print(f"\nAttempt {i} keys: {list(attempt.keys())}")
+                if "evaluation" in attempt and attempt["evaluation"] and "scores" in attempt["evaluation"]:
+                    try:
+                        scores = attempt["evaluation"]["scores"]
+                        print(f"  Found {len(scores)} evaluation scores")
+                        current_score = sum(s["score"] for s in scores if isinstance(s, dict) and "score" in s)
+                        print(f"  Total score: {current_score}")
+                        if current_score > best_score:
+                            best_score = current_score
+                            best_prompt = attempt["prompt_text"]
+                            print(f"  New best prompt found with score {current_score}")
+                    except Exception as e:
+                        print(f"  Error calculating score for attempt {i}: {e}")
+                else:
+                    print(f"  No evaluation data for attempt {i}")
     
-    if not best_prompt:
-        print("No prompts found in history")
+        # Fallback: if no evaluated prompts, use the last generated one
+        if not best_prompt and final_state and final_state.get("prompt_history"):
+            print("\nNo evaluated prompts found, using last generated prompt as fallback")
+            last_attempt = final_state["prompt_history"][-1]
+            if "prompt_text" in last_attempt:
+                best_prompt = last_attempt["prompt_text"]
+                print("Using last generated prompt")
+        
+        if not best_prompt:
+            print("No prompts found in history")
 
-    print("\n\n=====================================")
-    print("          FINAL RESULTS")
-    print("=====================================")
-    print("\n### Initial Prompt:")
-    print(initial_state["initial_prompt"])
-    print("\n### User Goal:")
-    print(initial_state["goal"])
-    print("\n### Best Refined Prompt:")
-    if best_prompt:
-        print(best_prompt)
-    else:
-        print("No improved prompt was finalized.")
-    print("\n=====================================")
+        print("\n\n=====================================")
+        print("          FINAL RESULTS")
+        print("=====================================")
+        print("\n### Initial Prompt:")
+        print(initial_state["initial_prompt"])
+        print("\n### User Goal:")
+        print(initial_state["goal"])
+        print("\n### Best Refined Prompt:")
+        if best_prompt:
+            print(best_prompt)
+        else:
+            print("No improved prompt was finalized.")
+        print("\n=====================================")
+    finally:
+        # Explicit cleanup to prevent threading exception during shutdown
+        try:
+            # Close the underlying HTTP client if accessible
+            if hasattr(p3ro_graph_builder.tools.model, '_client'):
+                p3ro_graph_builder.tools.model._client.close()
+            elif hasattr(p3ro_graph_builder.tools.model, 'client'):
+                p3ro_graph_builder.tools.model.client.close()
+        except Exception:
+            # Ignore cleanup errors - they're not critical
+            pass
